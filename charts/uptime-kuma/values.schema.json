@@ -11,7 +11,7 @@
         },
         "repository": {
           "type": "string",
-          "default": "k3rnel-pan1c/uptime-kuma",
+          "default": "serpro69/uptime-kuma",
           "description": "The full name of the uptime-kuma image within the selected registry."
         },
         "pullPolicy": {

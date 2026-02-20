@@ -58,16 +58,6 @@ jobs:
           containerfiles: |-
             container/Containerfile
 
-      - name: Push container image to quay.io
-        if: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)) && github.ref == 'refs/heads/main' }}
-        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2.8
-        with:
-          image: ${{ steps.container.outputs.image }}
-          tags: ${{ steps.container.outputs.tags }}
-          registry: quay.io/k3rnel-pan1c
-          username: ${{ secrets.QUAY_USR }}
-          password: ${{ secrets.QUAY_PWD }}
-
       - name: Push container image to ghcr.io
         if: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)) && github.ref == 'refs/heads/main' }}
         uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2.8
@@ -77,3 +67,13 @@ jobs:
           registry: ghcr.io/${{ github.repository_owner }}
           username: ${{ github.actor }}
           password: ${{ github.token }}
+
+      - name: Push container image to quay.io
+        if: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.publish)) && github.ref == 'refs/heads/main' }}
+        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2.8
+        with:
+          image: ${{ steps.container.outputs.image }}
+          tags: ${{ steps.container.outputs.tags }}
+          registry: quay.io/serpro69
+          username: ${{ secrets.QUAY_USR }}
+          password: ${{ secrets.QUAY_PWD }}

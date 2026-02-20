@@ -16,7 +16,7 @@ Here you will find a list of all the values suppoerted by this Helm Chart.
 |The container image registry to use and query for the image tag to pull.
 
 |`image.repository`
-|`"k3rnel-pan1c/uptime-kuma"`
+|`"serpro69/uptime-kuma"`
 |The full name of the uptime-kuma image within the selected registry.
 
 |`image.pullPolicy`
