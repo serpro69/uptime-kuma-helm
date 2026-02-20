@@ -226,7 +226,81 @@ CAUTION: Be sure you know what you are doing before making changes here.
 
 |`statefulSet.envVars`
 |`[]`
-|Allows you to add envs that you want to the statefulSet resource.
+|Allows you to add additional environment variables. For MariaDB configuration, prefer the `database` section.
+|===
+
+=== Database
+
+NOTE: Database configuration requires Uptime Kuma v2.0.0+. SQLite is the default and requires no configuration. For MariaDB, set `database.type` to `"mariadb"` and configure the connection settings. For production use, store credentials in a Kubernetes Secret and reference it via `database.existingSecret`.
+
+CAUTION: The embedded MariaDB option (`UPTIME_KUMA_ENABLE_EMBEDDED_MARIADB`) requires root access and is not compatible with the custom non-root container image shipped by this chart. Use an external MariaDB instance instead.
+
+|===
+|Value |Default |Description
+
+|`database.type`
+|`"sqlite"`
+|Database backend: `"sqlite"` (default) or `"mariadb"`.
+
+|`database.mariadb.hostname`
+|`""`
+|MariaDB server hostname.
+
+|`database.mariadb.port`
+|`3306`
+|MariaDB server port.
+
+|`database.mariadb.socket`
+|`""`
+|Unix socket path for MariaDB (alternative to hostname, v2.1.0+).
+
+|`database.mariadb.name`
+|`"uptime-kuma"`
+|MariaDB database name.
+
+|`database.mariadb.username`
+|`""`
+|MariaDB username. Ignored if `existingSecret` is set.
+
+|`database.mariadb.password`
+|`""`
+|MariaDB password. Ignored if `existingSecret` is set.
+
+|`database.mariadb.ssl`
+|`false`
+|Enable SSL for MariaDB connection (v2.1.0+).
+
+|`database.mariadb.ca`
+|`""`
+|CA certificate for MariaDB SSL (v2.1.0+).
+
+|`database.mariadb.poolMaxConnections`
+|`10`
+|Maximum number of MariaDB pool connections (v2.1.0+).
+
+|`database.existingSecret`
+|`""`
+|Name of an existing Secret containing DB credentials.
+
+|`database.existingSecretUsernameKey`
+|`"username"`
+|Key in the existing secret for the DB username.
+
+|`database.existingSecretPasswordKey`
+|`"password"`
+|Key in the existing secret for the DB password.
+|===
+
+=== Startup Probe
+
+NOTE: A startup probe is configured by default to allow up to 5 minutes for the container to start. This is important when upgrading from Uptime Kuma v1.x to v2.x, as the database migration may take significant time.
+
+|===
+|Value |Default |Description
+
+|`startupProbe`
+|`httpGet on / port http, failureThreshold: 30, periodSeconds: 10`
+|Startup probe configuration. Set to `{}` to disable.
 |===
 
 === ServiceMonitor

@@ -54,6 +54,67 @@ spec:
             - name: NODE_EXTRA_CA_CERTS
               value: /usr/local/share/ca-certificates/cacerts.pem
             {{- end }}
+            {{- if and .Values.database (ne .Values.database.type "sqlite") }}
+            - name: UPTIME_KUMA_DB_TYPE
+              value: {{ .Values.database.type | quote }}
+            {{- end }}
+            {{- if and .Values.database (eq .Values.database.type "mariadb") }}
+            {{- with .Values.database.mariadb }}
+            {{- if .hostname }}
+            - name: UPTIME_KUMA_DB_HOSTNAME
+              value: {{ .hostname | quote }}
+            {{- end }}
+            {{- if .port }}
+            - name: UPTIME_KUMA_DB_PORT
+              value: {{ .port | quote }}
+            {{- end }}
+            {{- if .socket }}
+            - name: UPTIME_KUMA_DB_SOCKET
+              value: {{ .socket | quote }}
+            {{- end }}
+            {{- if .name }}
+            - name: UPTIME_KUMA_DB_NAME
+              value: {{ .name | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.database.existingSecret }}
+            - name: UPTIME_KUMA_DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret }}
+                  key: {{ .Values.database.existingSecretUsernameKey | default "username" }}
+            - name: UPTIME_KUMA_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.database.existingSecret }}
+                  key: {{ .Values.database.existingSecretPasswordKey | default "password" }}
+            {{- else }}
+            {{- with .Values.database.mariadb }}
+            {{- if .username }}
+            - name: UPTIME_KUMA_DB_USERNAME
+              value: {{ .username | quote }}
+            {{- end }}
+            {{- if .password }}
+            - name: UPTIME_KUMA_DB_PASSWORD
+              value: {{ .password | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- with .Values.database.mariadb }}
+            {{- if .ssl }}
+            - name: UPTIME_KUMA_DB_SSL
+              value: "true"
+            {{- end }}
+            {{- if .ca }}
+            - name: UPTIME_KUMA_DB_CA
+              value: {{ .ca | quote }}
+            {{- end }}
+            {{- if and .poolMaxConnections (ne (int .poolMaxConnections) 10) }}
+            - name: UPTIME_KUMA_DB_POOL_MAX_CONNECTIONS
+              value: {{ .poolMaxConnections | quote }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
             {{- if .Values.statefulSet.envVars }}
             {{- toYaml .Values.statefulSet.envVars | nindent 12 }}
             {{- end }}
@@ -73,6 +134,10 @@ spec:
             {{- toYaml .Values.livenessProbe | nindent 12 }}
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:

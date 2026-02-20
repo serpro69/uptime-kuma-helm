@@ -18,27 +18,10 @@ commonLabels: {}
 statefulSet:
   labels: {}
   annotations: {}
-  # statefulSet.envVars you can add some app env here.
-  # more env vars see: https://github.com/louislam/uptime-kuma/wiki/Environment-Variables
+  # statefulSet.envVars -- Additional environment variables for the Uptime Kuma container.
+  # See: https://github.com/louislam/uptime-kuma/wiki/Environment-Variables
+  # NOTE: For MariaDB configuration, prefer using the `database` section below.
   envVars: []
-  # Example for using Mariadb (needs version 2.0.0+): 
-  # ################################################
-  # envVars:
-  #   - name: UPTIME_KUMA_ENABLE_EMBEDDED_MARIADB
-  #     value: "1"
-  #   - name: UPTIME_KUMA_DB_TYPE
-  #     value: "mariadb"
-  #   - name: UPTIME_KUMA_DB_HOSTNAME
-  #     value: "127.0.0.1"
-  #   - name: UPTIME_KUMA_DB_PORT
-  #     value: "3306"
-  #   - name: UPTIME_KUMA_DB_NAME
-  #     value: "uptime-kuma"
-  #   - name: UPTIME_KUMA_DB_USERNAME
-  #     value: "username"
-  #   - name: UPTIME_KUMA_DB_PASSWORD
-  #     value: "p@ssw0rd"
-
   # Example for Change UID & GID:
   # ############################
   # envVars:
@@ -46,6 +29,39 @@ statefulSet:
   #     value: "1001"
   #   - name: "PGID"
   #     value: "1002"
+
+# database -- Database configuration for Uptime Kuma v2.0.0+
+# SQLite is the default and requires no configuration.
+# For MariaDB, set database.type to "mariadb" and configure the connection settings below.
+database:
+  # database.type -- Database backend: "sqlite" (default) or "mariadb"
+  type: "sqlite"
+  mariadb:
+    # database.mariadb.hostname -- MariaDB server hostname
+    hostname: ""
+    # database.mariadb.port -- MariaDB server port
+    port: 3306
+    # database.mariadb.socket -- Unix socket path (alternative to hostname, v2.1.0+)
+    socket: ""
+    # database.mariadb.name -- Database name
+    name: "uptime-kuma"
+    # database.mariadb.username -- Database username (ignored if existingSecret is set)
+    username: ""
+    # database.mariadb.password -- Database password (ignored if existingSecret is set)
+    password: ""
+    # database.mariadb.ssl -- Enable SSL connection to MariaDB (v2.1.0+)
+    ssl: false
+    # database.mariadb.ca -- CA certificate for MariaDB SSL (v2.1.0+)
+    ca: ""
+    # database.mariadb.poolMaxConnections -- Maximum number of pool connections (v2.1.0+)
+    poolMaxConnections: 10
+  # database.existingSecret -- Name of an existing Secret containing DB credentials.
+  # The secret should have keys matching existingSecretUsernameKey and existingSecretPasswordKey.
+  existingSecret: ""
+  # database.existingSecretUsernameKey -- Key in the existing secret for the DB username
+  existingSecretUsernameKey: "username"
+  # database.existingSecretPasswordKey -- Key in the existing secret for the DB password
+  existingSecretPasswordKey: "password"
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
@@ -78,6 +94,16 @@ readinessProbe:
     path: /
     port: http
     scheme: HTTP
+
+# startupProbe -- Startup probe to handle slow v2 database migrations.
+# Allows up to 5 minutes (30 * 10s) for the container to start.
+startupProbe:
+  httpGet:
+    path: /
+    port: http
+    scheme: HTTP
+  failureThreshold: 30
+  periodSeconds: 10
 
 service:
   type: ClusterIP
