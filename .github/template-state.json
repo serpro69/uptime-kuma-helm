@@ -1,8 +1,8 @@
 {
   "schema_version": "1",
   "upstream_repo": "serpro69/claude-starter-kit",
-  "template_version": "66c5002d48b049d7811b4e66a844038b7ade4480",
-  "synced_at": "1970-01-01T00:00:00Z",
+  "template_version": "353ca8e902ff29f3b2c861e10ae4d18b03e29e0b",
+  "synced_at": "2026-02-20T12:52:09Z",
   "variables": {
     "PROJECT_NAME": "uptime-kuma-helm",
     "LANGUAGES": "yaml",
