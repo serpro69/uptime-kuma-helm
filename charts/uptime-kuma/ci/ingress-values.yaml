@@ -1,0 +1,12 @@
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: uptime.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: uptime-tls
+      hosts:
+        - uptime.example.com

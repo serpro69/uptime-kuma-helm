@@ -1,0 +1,210 @@
+suite: Resource rendering
+release:
+  name: test-release
+tests:
+  # --- Ingress ---
+
+  - it: should not render Ingress by default
+    templates:
+      - ingress.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render Ingress when enabled
+    templates:
+      - ingress.yaml
+    set:
+      ingress.enabled: true
+      ingress.hosts:
+        - host: uptime.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Ingress
+
+  - it: should not render Ingress when route is also enabled
+    templates:
+      - ingress.yaml
+    set:
+      ingress.enabled: true
+      route.enabled: true
+      ingress.hosts:
+        - host: uptime.example.com
+          paths:
+            - path: /
+              pathType: Prefix
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # --- Route ---
+
+  - it: should not render Route by default
+    templates:
+      - route.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render Route when enabled
+    templates:
+      - route.yaml
+    set:
+      route.enabled: true
+      route.host: uptime.example.com
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Route
+
+  - it: should not render Route when ingress is also enabled
+    templates:
+      - route.yaml
+    set:
+      route.enabled: true
+      ingress.enabled: true
+      route.host: uptime.example.com
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # --- PVC ---
+
+  - it: should not render PVC by default
+    templates:
+      - pvc.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render PVC when persistence is enabled
+    templates:
+      - pvc.yaml
+    set:
+      persistence.enabled: true
+      persistence.sizeLimit: 8Gi
+      persistence.storageClass: standard
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: spec.resources.requests.storage
+          value: "8Gi"
+      - equal:
+          path: spec.storageClassName
+          value: "standard"
+
+  # --- ServiceMonitor ---
+
+  - it: should not render ServiceMonitor by default
+    templates:
+      - servicemonitor.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render ServiceMonitor when enabled
+    templates:
+      - servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.authentication.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceMonitor
+      - isNotNull:
+          path: spec.endpoints[0].basicAuth
+
+  - it: should use existingSecret in ServiceMonitor basicAuth
+    templates:
+      - servicemonitor.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.authentication.enabled: true
+      serviceMonitor.authentication.existingSecret: my-prom-secret
+    asserts:
+      - equal:
+          path: spec.endpoints[0].basicAuth.password.name
+          value: my-prom-secret
+      - equal:
+          path: spec.endpoints[0].basicAuth.username.name
+          value: my-prom-secret
+
+  # --- Secret (ServiceMonitor credentials) ---
+
+  - it: should not render Secret by default
+    templates:
+      - secret.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render Secret when serviceMonitor auth is enabled without existingSecret
+    templates:
+      - secret.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.authentication.enabled: true
+      serviceMonitor.authentication.username: admin
+      serviceMonitor.authentication.password: token123
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Secret
+
+  - it: should not render Secret when existingSecret is set
+    templates:
+      - secret.yaml
+    set:
+      serviceMonitor.enabled: true
+      serviceMonitor.authentication.enabled: true
+      serviceMonitor.authentication.existingSecret: my-secret
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # --- ServiceAccount ---
+
+  - it: should render ServiceAccount by default
+    templates:
+      - serviceaccount.yaml
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ServiceAccount
+
+  - it: should not render ServiceAccount when create is false
+    templates:
+      - serviceaccount.yaml
+    set:
+      serviceAccount.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  # --- Service ---
+
+  - it: should render Service with ClusterIP by default
+    templates:
+      - service.yaml
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: spec.type
+          value: ClusterIP
+      - equal:
+          path: spec.ports[0].port
+          value: 80

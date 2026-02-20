@@ -1,0 +1,273 @@
+suite: StatefulSet
+templates:
+  - statefulSet.yaml
+release:
+  name: test-release
+tests:
+  # --- Default rendering (SQLite) ---
+
+  - it: should render a StatefulSet with correct name
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.name
+          value: test-release-uptime-kuma
+
+  - it: should set container image from chart defaults
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "quay.io/serpro69/uptime-kuma:2.1.3"
+
+  - it: should always set UPTIME_KUMA_PORT and PORT env vars
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_PORT
+            value: "3001"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: PORT
+            value: "3001"
+
+  - it: should NOT set any DB env vars when database type is sqlite
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_TYPE
+          any: true
+
+  - it: should use EmptyDir volume when persistence is disabled
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].name
+          value: uptime-storage
+      - isNotNull:
+          path: spec.template.spec.volumes[0].emptyDir
+
+  - it: should render startupProbe by default
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.containers[0].startupProbe
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.httpGet.path
+          value: /
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe.failureThreshold
+          value: 30
+
+  - it: should render livenessProbe and readinessProbe by default
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.containers[0].livenessProbe
+      - isNotNull:
+          path: spec.template.spec.containers[0].readinessProbe
+
+  # --- MariaDB with plain credentials ---
+
+  - it: should set UPTIME_KUMA_DB_TYPE when database type is mariadb
+    set:
+      database.type: mariadb
+      database.mariadb.hostname: db.example.com
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_TYPE
+            value: "mariadb"
+
+  - it: should set MariaDB connection env vars
+    set:
+      database.type: mariadb
+      database.mariadb.hostname: db.example.com
+      database.mariadb.port: 3307
+      database.mariadb.name: mydb
+      database.mariadb.username: admin
+      database.mariadb.password: s3cret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_HOSTNAME
+            value: "db.example.com"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_PORT
+            value: "3307"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_NAME
+            value: "mydb"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_USERNAME
+            value: "admin"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_PASSWORD
+            value: "s3cret"
+
+  - it: should set MariaDB SSL env vars when ssl is enabled
+    set:
+      database.type: mariadb
+      database.mariadb.hostname: db.example.com
+      database.mariadb.ssl: true
+      database.mariadb.ca: /path/to/ca.pem
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_SSL
+            value: "true"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_CA
+            value: "/path/to/ca.pem"
+
+  - it: should set pool max connections when non-default
+    set:
+      database.type: mariadb
+      database.mariadb.hostname: db.example.com
+      database.mariadb.poolMaxConnections: 25
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_POOL_MAX_CONNECTIONS
+            value: "25"
+
+  - it: should NOT set pool max connections when value is default
+    set:
+      database.type: mariadb
+      database.mariadb.hostname: db.example.com
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_POOL_MAX_CONNECTIONS
+          any: true
+
+  - it: should set socket env var when configured
+    set:
+      database.type: mariadb
+      database.mariadb.socket: /var/run/mysqld/mysqld.sock
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_SOCKET
+            value: "/var/run/mysqld/mysqld.sock"
+
+  # --- MariaDB with existingSecret ---
+
+  - it: should use secretKeyRef when existingSecret is set
+    set:
+      database.type: mariadb
+      database.mariadb.hostname: db.example.com
+      database.existingSecret: my-db-secret
+      database.existingSecretUsernameKey: db-user
+      database.existingSecretPasswordKey: db-pass
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: my-db-secret
+                key: db-user
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: my-db-secret
+                key: db-pass
+
+  - it: should NOT set plain credentials when existingSecret is used
+    set:
+      database.type: mariadb
+      database.mariadb.hostname: db.example.com
+      database.mariadb.username: ignored
+      database.mariadb.password: ignored
+      database.existingSecret: my-db-secret
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: UPTIME_KUMA_DB_USERNAME
+            value: "ignored"
+
+  # --- Persistence ---
+
+  - it: should use PVC volume when persistence is enabled
+    set:
+      persistence.enabled: true
+    asserts:
+      - isNotNull:
+          path: spec.template.spec.volumes[0].persistentVolumeClaim
+      - equal:
+          path: spec.template.spec.volumes[0].persistentVolumeClaim.claimName
+          value: test-release-uptime-kuma
+
+  # --- Extra certificates ---
+
+  - it: should set NODE_EXTRA_CA_CERTS and mount cacerts when extraCertificates is enabled
+    set:
+      extraCertificates.enabled: true
+      extraCertificates.cacerts: "-----BEGIN CERTIFICATE-----\ntest\n-----END CERTIFICATE-----"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NODE_EXTRA_CA_CERTS
+            value: /usr/local/share/ca-certificates/cacerts.pem
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: cacerts
+            mountPath: /usr/local/share/ca-certificates/cacerts.pem
+            subPath: cacerts.pem
+
+  # --- Image overrides ---
+
+  - it: should allow overriding image tag
+    set:
+      image.tag: "1.23.0"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "quay.io/serpro69/uptime-kuma:1.23.0"
+
+  - it: should allow overriding image registry and repository
+    set:
+      image.registry: "ghcr.io"
+      image.repository: "myorg/uptime-kuma"
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: "^ghcr\\.io/myorg/uptime-kuma:"
+
+  # --- Custom env vars ---
+
+  - it: should inject custom envVars
+    set:
+      statefulSet.envVars:
+        - name: MY_CUSTOM_VAR
+          value: "custom-value"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: MY_CUSTOM_VAR
+            value: "custom-value"

@@ -30,7 +30,7 @@ helm repo update
 ----
 helm install test-uptime k3/uptime-kuma
 # or a specific version
-helm install test-uptime k3/uptime-kuma --version 1.3.0
+helm install test-uptime k3/uptime-kuma --version 2.0.0
 ----
 
 == Service Monitor

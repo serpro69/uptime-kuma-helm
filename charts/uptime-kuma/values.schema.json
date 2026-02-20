@@ -204,6 +204,85 @@
           "description": "One or more certificates in PEM format."
         }
       }
+    },
+    "database": {
+      "type": "object",
+      "description": "Database configuration for Uptime Kuma v2.0.0+. SQLite is the default.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["sqlite", "mariadb"],
+          "default": "sqlite",
+          "description": "Database backend: sqlite (default) or mariadb."
+        },
+        "mariadb": {
+          "type": "object",
+          "description": "MariaDB connection settings. Only used when database.type is mariadb.",
+          "properties": {
+            "hostname": {
+              "type": "string",
+              "default": "",
+              "description": "MariaDB server hostname."
+            },
+            "port": {
+              "type": "integer",
+              "default": 3306,
+              "description": "MariaDB server port."
+            },
+            "socket": {
+              "type": "string",
+              "default": "",
+              "description": "Unix socket path for MariaDB (alternative to hostname, v2.1.0+)."
+            },
+            "name": {
+              "type": "string",
+              "default": "uptime-kuma",
+              "description": "MariaDB database name."
+            },
+            "username": {
+              "type": "string",
+              "default": "",
+              "description": "MariaDB username. Ignored if existingSecret is set."
+            },
+            "password": {
+              "type": "string",
+              "default": "",
+              "description": "MariaDB password. Ignored if existingSecret is set."
+            },
+            "ssl": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable SSL for MariaDB connection (v2.1.0+)."
+            },
+            "ca": {
+              "type": "string",
+              "default": "",
+              "description": "CA certificate for MariaDB SSL (v2.1.0+)."
+            },
+            "poolMaxConnections": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1,
+              "description": "Maximum number of MariaDB pool connections (v2.1.0+)."
+            }
+          }
+        },
+        "existingSecret": {
+          "type": "string",
+          "default": "",
+          "description": "Name of an existing Secret containing DB credentials."
+        },
+        "existingSecretUsernameKey": {
+          "type": "string",
+          "default": "username",
+          "description": "Key in the existing secret for the DB username."
+        },
+        "existingSecretPasswordKey": {
+          "type": "string",
+          "default": "password",
+          "description": "Key in the existing secret for the DB password."
+        }
+      }
     }
   },
   "definitions": {

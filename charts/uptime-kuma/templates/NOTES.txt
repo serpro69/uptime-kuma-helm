@@ -1,3 +1,25 @@
+{{- if .Release.IsUpgrade }}
+UPGRADE NOTICE (Uptime Kuma v2)
+================================
+If you are upgrading from Uptime Kuma v1.x, please be aware:
+- The database migration may take significant time depending on your data size.
+- DO NOT interrupt the migration process.
+- Ensure you have a backup of your persistent volume before upgrading.
+See: https://github.com/louislam/uptime-kuma/wiki/Migration-From-v1-To-v2
+
+{{- end }}
+{{- if and .Values.database (eq .Values.database.type "mariadb") }}
+Database: MariaDB
+{{- if .Values.database.mariadb.hostname }}
+  Host: {{ .Values.database.mariadb.hostname }}:{{ .Values.database.mariadb.port }}
+{{- end }}
+{{- if .Values.database.mariadb.name }}
+  Name: {{ .Values.database.mariadb.name }}
+{{- end }}
+{{- else }}
+Database: SQLite (default, stored in /app/data)
+{{- end }}
+
 1. Get the application URL by running these commands:
 {{- if and .Values.ingress.enabled (not .Values.route.enabled) }}
 {{- range $host := .Values.ingress.hosts }}
