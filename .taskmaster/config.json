@@ -37,6 +37,6 @@
   "claudeCode": {
     "customSystemPrompt": "",
     "appendSystemPrompt": "",
-    "permissionMode": ""
+    "permissionMode": "default"
   }
 }
