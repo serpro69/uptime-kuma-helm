@@ -1,0 +1,11 @@
+database:
+  type: "mariadb"
+  mariadb:
+    hostname: "mariadb.example.com"
+    port: 3306
+    name: "uptime-kuma"
+    username: "kuma"
+    password: "secret"
+    ssl: true
+    ca: "/etc/ssl/certs/ca.pem"
+    poolMaxConnections: 25

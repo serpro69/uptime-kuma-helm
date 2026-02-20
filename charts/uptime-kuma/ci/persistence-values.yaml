@@ -1,0 +1,4 @@
+persistence:
+  enabled: true
+  sizeLimit: 8Gi
+  storageClass: "standard"
